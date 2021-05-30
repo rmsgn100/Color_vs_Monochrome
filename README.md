@@ -90,6 +90,57 @@ Test.csv 파일
 2. 머신러닝의 결과와 동일하게, 흑백 이미지를 사용할 때의 학습 속도와 예측 속도가 훨씬 빠르고, 정확도는 비슷한 수치를 보여준다. 하지만 이게 전부가 아니다.
 3. 위 "프로젝트 배경 지식"에서 설명한 대로, 실제로 흑백 카메라를 사용한다면 그 이미지의 해상도는 컬러 이미지의 해상도의 3배이다. 이 해상도 차이를 실제로 적용했을 때의 CNN모델의 정확도 차이는 84.5%(컬러) vs 95.21%(흑백) 으로, 흑백 카메라를 사용한 정확도가 현실에선 훨씬 좋다.
 
+
+## Grad_CAM
+
+Grad_CAM 은 CNN 모델이 의사결정을 할 때 이미지의 어떤 특징들을 보고 그런 결정을 내렸는지를 보여주는 도구이다. 여기선, 컬러 이미지를 통해 학습한 모델과 흑백 이미지를 통해 학습한 모델이 각 이미지(컬러, 흑백)의 특징을 비슷하게 파악하고 있는지, 아니면 각자 전혀 다르게 이미지를 파악 하는지를 확인해 볼 수 있다.
+
+<p align="center">
+<img width="500" alt="스크린샷 2021-02-21 오후 9 33 54" src="https://user-images.githubusercontent.com/61172021/120095302-2fecc780-c160-11eb-8ec8-8014c88057cc.png">
+</p>
+
+두 모델은 이미지의 특징들을 비슷하게 파악하는 것으로 보인다. 왼쪽이 컬러 이미지를 통해 학습한 모델이고, 오른쪽이 흑백 이미지를 통해 학습한 모델이다. 두 모델 모두 표지판의 모양과 표지판에 쓰여진 글자 정보를 잘 구별하고있다. 이것으로 보아, 컴퓨터는 이미지의 윤곽, 패턴, 모양 등의 특징들만으로도 물체를 식별할 수 있는 것으로 보인다.
+
+## Scaling
+
+<p align="center">
+<img width="1000" alt="스크린샷 2021-02-21 오후 9 33 54" src="https://user-images.githubusercontent.com/61172021/120095604-c53c8b80-c161-11eb-958b-ff7d2a2e6c67.png">
+</p>
+
+2020년 9월에 발표된 논문 "EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" 에서는 CNN 모델의 성능을 올리는 방법으로 4가지 Scaling 방법을 소개했다. 그 중 첫번째인 Resolution Scaling 이란 심플하게 input 이미지의 해상도를 높이는 방법이다. 그리고 Width Scaling 은 위 그림과 같이 기본 모델의 filter 개수를 늘리는 방법으로, MobileNet, ShuffleNet 등이 Width Scaling 방법을 적용한 모델이다. 세번째 방법인 Depth Scaling 은 layer 의 개수를 늘리는 방법으로, 대표적으로 ResNet 이 Depth Scaling 방법을 적용한 모델이다. 마지막으로, Compound Scaling 이란 앞서 설명한 3가지 방법을 한번에 모두 사용하는 방법이다.
+
+각각의 Scaling 방법을 적용했을 때의 결과를 비교해 보았다 : 
+
+* Resolution Scaling : 95.21 %
+* Width Scaling : 96.14 %
+* Depth Scaling : 96.86 %
+* Compound Scaling : 97.53 %
+
+## Data Augmentation 
+
+이미지 rotation/shift 와 같은 랜덤한 변화를 주어 훈련세트의 다양성을 증가시켜 모델의 성능을 개선시키는 방법
+
+<p align="center">
+<img width="918" alt="스크린샷 2021-05-30 오후 4 16 31" src="https://user-images.githubusercontent.com/61172021/120095712-688da080-c162-11eb-9fce-39651e782bcb.png">
+</p>
+
+처음 Data Augmentation 을 적용할 때 오히려 성능이 내려가는 상황을 겪었다. 왜 그런지 곰곰히 생각해보니 상하 반전, 좌우 반전같은 변화를 사용해서 그랬던 것 같다. 실제 표지판은 거꾸로 되어있을리가 없으니, 상하/좌우 반전같은 변화를 주어 학습하면 성능이 내려가는 결과를 낳게된다. 그리고, rotation_range(회전) 도 조금만(10도 정도만) 사용해야 한다. (90도로 꺾여있는 표지판은 없으니!)
+
+* Data Augmentation 이전 : 97.53 %
+* Data Augmentation 이후 : 98.62 %
+
+## Cross Validation 
+
+* 모든 데이터셋을 훈련에 사용할 수 있다는 장점이 있다.
+* 훈련, 평가 시 사용되는 데이터의 편중과 과적합을 막을 수 있고, 조금 더 일반화된 모델을 만들 수 있다. 
+
+<p align="center">
+<img width="565" alt="스크린샷 2021-05-30 오후 4 22 31" src="https://user-images.githubusercontent.com/61172021/120095858-3fb9db00-c163-11eb-9c75-1cc0e132fa69.png">
+</p>
+
+* Cross Validation 이전 : 98.62 %
+* Cross Validation 이후 : 98.75 %
+
 ## 결과 해석
 
 * 컬러 이미지를 사용할 때와 흑백 이미지를 사용할 때의 모델의 정확도는 머신러닝과 딥러닝 모두에서 거의 비슷하다.
@@ -97,5 +148,4 @@ Test.csv 파일
 * 현실에서 흑백 카메라를 사용한다면 그 해상도가 컬러 카메라의 3배이므로 그에따라 모델의 정확도가 크게 좋아진다.
 * 즉, 흑백 카메라를 사용하는 것이 가격, 속도, 정확도 모든 측면에서 좋다. 
 * 사람에겐 표지판의 색깔 정보가 중요하겠지만, 컴퓨터는 패턴/윤곽/모양 등의 속성만으로도 표지판 구별이 가능하다고 볼 수 있다.
-
-
+* 하드웨어(카메라) 교체를 통해 모델의 성능을 크게 개선시켰고, 추가적인 모델 성능 개선을 위해서 소프트웨어 측면의 노력(Scaling 기법들, Data Augmentation, Cross Validation)도 함께하여 최종적으로 98.75 % 라는 성능에 도달했다.
